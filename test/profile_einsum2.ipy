@@ -1,0 +1,16 @@
+import einsum2
+import numpy as np
+
+#I,J,K,L = np.random.randint(10, 20, size=4)
+#I = J = K = L = 300
+I = J = K = L = 100
+
+A = np.random.normal(size=(I,J,K))
+B = np.random.normal(size=(I,K,L))
+
+print("Timing np.matmul")
+%timeit A @ B
+
+for j in (1,2,4):
+    print("Timing einsum2.matmul with %d threads" % j)
+    %timeit einsum2.matmul(A,B, threads=j)

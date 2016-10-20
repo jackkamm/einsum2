@@ -1,1 +1,1 @@
-from .parallel_matmul import parallel_matmul
+from .parallel_matmul import matmul
