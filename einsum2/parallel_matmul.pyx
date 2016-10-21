@@ -6,9 +6,9 @@ from cython.parallel import prange, parallel
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-def matmul(np.ndarray[np.double_t, ndim=3] A,
-           np.ndarray[np.double_t, ndim=3] B,
-           int threads = 1):
+def _par_matmul(np.ndarray[np.double_t, ndim=3] A,
+                np.ndarray[np.double_t, ndim=3] B,
+                int threads):
     if A.shape[0] != B.shape[0] or A.shape[2] != B.shape[1]:
         raise ValueError("Invalid dimensions for matmul")
 

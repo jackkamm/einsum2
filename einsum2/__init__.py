@@ -1,1 +1,1 @@
-from .parallel_matmul import matmul
+from .einsum2 import matmul, einsum2
