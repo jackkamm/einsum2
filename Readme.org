@@ -1,78 +1,71 @@
 * einsum2
 
 This package contains a parallel implementation for 
-a subset of `numpy.einsum` functionality.
+a subset of ~numpy.einsum~ functionality.
 
-`numpy.einsum` is a fantastic function for multiplying `numpy` arrays. 
-However, `numpy.dot` and `numpy.tensordot` are typically faster, especially if `numpy`
+~numpy.einsum~ is a fantastic function for multiplying ~numpy~ arrays. 
+However, ~numpy.dot~ and ~numpy.tensordot~ are typically faster, especially if ~numpy~
 is linked to a parallel implementation of BLAS:
-then `numpy.dot` and `numpy.tensordot` will take advantage of the multiple
-CPUs, whereas `numpy.einsum` remains single-threaded.
+then ~numpy.dot~ and ~numpy.tensordot~ will take advantage of the multiple
+CPUs, whereas ~numpy.einsum~ remains single-threaded.
 
-The trouble is, some `einsum` products are impossible to express as
-`dot` or `tensordot`. For example,
-```
-numpy.einsum(A, [0,1,2], B, [0,2,3], [0,1,3])
-```
-returns a tensor $C$ with $$C_{i,j,k} = \sum_l A_{i,j,l} B_{i,l,k}$$.
-This cannot be expressed as a `dot` or `tensordot` because the repeated
-axis $i$ (or `0`) is included in the output $C$.
+The trouble is, some ~einsum~ products are impossible to express as
+~dot~ or ~tensordot~. For example,
+: numpy.einsum(A, [0,1,2], B, [0,2,3], [0,1,3])
+returns a tensor C with C_{i,j,k} = \sum_{m} A_{i,j,m} B_{i,m,k}.
+This cannot be expressed as a ~dot~ or ~tensordot~ because the shared
+axis i (or ~0~) is included in the output C.
 
-This operation /can/ be expressed in terms of `numpy.matmul`, and in particular
-this example is equivalent to `numpy.matmul(A,B)`.
-However, on my machine, `numpy.matmul` does not appear to take advantage
+This operation /can/ be expressed in terms of ~numpy.matmul~, and in particular
+this example is equivalent to ~numpy.matmul(A,B)~.
+However, on my machine, ~numpy.matmul~ does not appear to take advantage
 of parallel BLAS with multiple cores.
 This may eventually change in the future (last year Intel introduced
-[[https://software.intel.com/en-us/articles/introducing-batch-gemm-operations][batched GEMM]] operations), but in the meantime, you can use `einsum2`
-to parallelize `numpy.matmul` and equivalent `einsum` operations.
+[[https://software.intel.com/en-us/articles/introducing-batch-gemm-operations][batched GEMM]] operations), but in the meantime, you can use ~einsum2~
+to parallelize ~numpy.matmul~ and equivalent ~einsum~ operations.
 
-`einsum2` is also compatible with the `autograd` package for automatic
+~einsum2~ is also compatible with the ~autograd~ package for automatic
 differentiation.
 
 ** Usage
 
-*** `batched_dot`
+*** ~batched_dot~
 
-This is a parallel implementation of `numpy.matmul`.
-More specifically, for 3-tensors `a` and `b`,
-```
-einsum2.batched_dot(a, b, threads=1)
-```
-computes `numpy.matmul(a,b)` using `threads` parallel threads.
+This is a parallel implementation of ~numpy.matmul~.
+More specifically, for 3-tensors ~a~ and ~b~,
+: einsum2.batched_dot(a, b, threads=1)
+computes ~numpy.matmul(a,b)~ using ~threads~ parallel threads.
 
-`batched_dot` is only currently implemented for `a` and `b` that are 3-tensors.
+~batched_dot~ is only currently implemented for ~a~ and ~b~ that are 3-tensors.
 
-*** `einsum2`
+*** ~einsum2~
 
-This computes `einsum` products that can be expressed
-in terms of `numpy.matmul`.
+This computes ~einsum~ products that can be expressed
+in terms of ~numpy.matmul~.
 It has the form
-```
-einsum2.einsum2(a, a_sublist, b, b_sublist, out_sublist, threads=1)
-```
-where `a` and `b` are tensors, `a_sublist` and `b_sublist` label the indices
-of `a` and `b`, and `out_sublist` gives the indices of the output array.
+: einsum2.einsum2(a, a_sublist, b, b_sublist, out_sublist, threads=1)
+where ~a~ and ~b~ are tensors, ~a_sublist~ and ~b_sublist~ label the indices
+of ~a~ and ~b~, and ~out_sublist~ gives the indices of the output array.
 
-Unlike `numpy.einsum`, the subscripts in `einsum2.einsum2` are allowed to be a list of
-arbitrary hashable keys.
+Unlike ~numpy.einsum~, the subscripts in ~einsum2.einsum2~ are allowed to be a list of
+arbitrary hashable keys. However, repeated indices on the same array (i.e. diagonal operations)
+are not supported.
 
-*** `einsum1`
+*** ~einsum1~
 
-This is a convenience function for `einsum` operations on a single array.
+This is a convenience function for ~einsum~ operations on a single array.
 In particular,
-```
-einsum2.einsum1(in_arr, in_sublist, out_sublist)
-```
-returns an array `out_arr` that is derived from `in_arr`, but with subscripts given by
-`out_sublist`. In particular, all subscripts of `in_sublist` not in `out_sublist`
-are summed out, and then the axes of `in_arr` are rearranged to match `out_sublist`.
+: einsum2.einsum1(in_arr, in_sublist, out_sublist)
+returns an array ~out_arr~ that is derived from ~in_arr~, but with subscripts given by
+~out_sublist~. In particular, all subscripts of ~in_sublist~ not in ~out_sublist~
+are summed out, and then the axes of ~in_arr~ are rearranged to match ~out_sublist~.
 
-Like `einsum2`, arbitrary keys are allowed to label the subscripts in `einsum1`.
-Also like `einsum2`, repeated subscripts (i.e. diagonal operations) are not supported.
+Like ~einsum2~, arbitrary keys are allowed to label the subscripts in ~einsum1~.
+Also like ~einsum2~, repeated subscripts (i.e. diagonal operations) are not supported.
 
 ** Installation
 
-Pre-requisites are `Cython`, a C compiler, `numpy`, and `autograd`.
+Pre-requisites are ~Cython~, a C compiler, ~numpy~, and ~autograd~.
 Furthermore, your C compiler needs to support OpenMP, and may need to
 be the same as the C compiler that created your Python installation.
 
@@ -82,12 +75,8 @@ Users of Anaconda Python on Linux may also run into issues, because
 Anaconda Python was compiled with the old gcc-4.
 
 If you use Anaconda Python on OSX or Linux, you can do
-```
-conda install gcc
-```
+: conda install gcc
 to install a compatible C compiler, and then
-install `einsum2` with the correct C compiler by typing
-```
-CC=gcc pip install .
-```
-at the top-level directory of `einsum2`.
+install ~einsum2~ with the correct C compiler by typing
+: CC=gcc pip install .
+at the top-level directory of ~einsum2~.
