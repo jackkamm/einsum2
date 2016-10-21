@@ -46,12 +46,14 @@ install ~einsum2~ with the correct C compiler by typing
 at the top-level directory of ~einsum2~.
 
 (WARNING: depending on the order of your load path, ~conda install gcc~
-may clobber your system ~gcc~. I am looking for a satisfactory solution to this issue.
-Any advice is appreciated)
+may clobber your system ~gcc~. 
+One option is to create a separate with [[http://conda.pydata.org/docs/using/envs.html][environment]] with conda.
+I am looking for a better solution to this issue --
+advice appreciated)
 
 To test whether the parallelization is working, try
 ~ipython test/profile_einsum2~, you should see a speedup for
-the calls to ~batched_dot~ using multiple threads.
+the function calls using multiple threads.
 
 ** Usage
 
@@ -68,6 +70,7 @@ and ~threads~ is the number of parallel cores to use.
 Unlike ~numpy.einsum~, the subscripts in ~einsum2.einsum2~ are allowed to be a list of
 arbitrary hashable keys. However, repeated indices on the same array (i.e. diagonal operations)
 are not supported.
+Also, the alternative ~numpy.einsum(subscript_str, arr0, arr1, ...)~ format is not yet supported.
 
 *** ~batched_dot~
 
