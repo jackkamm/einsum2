@@ -12,5 +12,5 @@ print("Timing np.matmul")
 %timeit A @ B
 
 for j in (1,2,4):
-    print("Timing einsum2.matmul with %d threads" % j)
-    %timeit einsum2.matmul(A,B, threads=j)
+    print("Timing einsum2.batched_dot with %d threads" % j)
+    %timeit einsum2.batched_dot(A,B, threads=j)

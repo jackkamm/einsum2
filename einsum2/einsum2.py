@@ -3,14 +3,14 @@ import autograd.numpy as np
 from .parallel_matmul import _par_matmul
 
 @autograd.primitive
-def matmul(a, b, threads=1):
+def batched_dot(a, b, threads=1):
     return _par_matmul(a, b, threads)
-matmul.defgrad(lambda ans,a,b,threads=1: lambda g: matmul(g, np.transpose(b, (0,2,1)),
-                                                          threads))
-matmul.defgrad(lambda ans,a,b,threads=1: lambda g: matmul(np.transpose(a, (0,2,1)), g,
-                                                          threads), argnum=1)
+batched_dot.defgrad(lambda ans,a,b,threads=1: lambda g: batched_dot(g, np.transpose(b, (0,2,1)),
+                                                                    threads))
+batched_dot.defgrad(lambda ans,a,b,threads=1: lambda g: batched_dot(np.transpose(a, (0,2,1)), g,
+                                                                    threads), argnum=1)
 
-def einsum2(a, a_sublist, b, b_sublist, out_sublist):
+def einsum2(a, a_sublist, b, b_sublist, out_sublist, threads=1):
     for subs in a_sublist, b_sublist, out_sublist:
         if len(subs) != len(set(subs)):
             raise NotImplementedError("Repeated subscripts not implemented")
@@ -41,13 +41,17 @@ def einsum2(a, a_sublist, b, b_sublist, out_sublist):
                 elif shapes[s] != i:
                     raise ValueError("a,b shapes don't match")
 
-    c = matmul(_reshape(a, a_sublist, abc, a_minus_b, ab_minus_c),
-               _reshape(b, b_sublist, abc, ab_minus_c, b_minus_a))
+    c = batched_dot(_reshape(a, a_sublist, abc, a_minus_b, ab_minus_c),
+                    _reshape(b, b_sublist, abc, ab_minus_c, b_minus_a), threads=threads)
 
     c_sublist = abc + a_minus_b + b_minus_a
     c = np.reshape(c, [shapes[s] for s in c_sublist])
 
     return _transpose(c, c_sublist, out_sublist)
+
+def einsum1(in_arr, in_sublist, out_sublist):
+    in_arr, in_sublist = _sum_unique_axes(in_arr, in_sublist, out_sublist)
+    return _transpose(in_arr, in_sublist, out_sublist)
 
 def _reshape(in_arr, in_sublist, *out_sublists):
     assert len(out_sublists) == 3
