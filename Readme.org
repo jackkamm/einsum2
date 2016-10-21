@@ -1,6 +1,6 @@
 * einsum2
 
-This package contains a parallel implementation for 
+This is a python package that contains a parallel implementation for 
 a subset of ~numpy.einsum~ functionality.
 
 ~numpy.einsum~ is a fantastic function for multiplying ~numpy~ arrays. 
@@ -24,10 +24,50 @@ This may eventually change in the future (last year Intel introduced
 [[https://software.intel.com/en-us/articles/introducing-batch-gemm-operations][batched GEMM]] operations), but in the meantime, you can use ~einsum2~
 to parallelize ~numpy.matmul~ and equivalent ~einsum~ operations.
 
-~einsum2~ is also compatible with the ~autograd~ package for automatic
+~einsum2~ is also compatible with the [[https://github.com/HIPS/autograd][autograd]] package for automatic
 differentiation.
 
+** Installation
+
+Pre-requisites are a C compiler, ~Cython~, ~numpy~, and [[https://github.com/HIPS/autograd][autograd]].
+Furthermore, your C compiler needs to support OpenMP, and in some cases may need to
+be the same as the C compiler that created your Python installation.
+
+So, for example, the default C compiler on OSX will not work, because
+it does not yet support OpenMP.
+Some Linux users of Anaconda Python may also run into issues, because
+Anaconda Python was compiled with the old gcc-4.
+
+If you use Anaconda Python, you can do
+: conda install gcc
+to install a compatible C compiler, and then
+install ~einsum2~ with the correct C compiler by typing
+: CC=/path/to/anaconda/gcc pip install .
+at the top-level directory of ~einsum2~.
+
+(WARNING: depending on the order of your load path, ~conda install gcc~
+may clobber your system ~gcc~. I am looking for a satisfactory solution to this issue.
+Any advice is appreciated)
+
+To test whether the parallelization is working, try
+~ipython test/profile_einsum2~, you should see a speedup for
+the calls to ~batched_dot~ using multiple threads.
+
 ** Usage
+
+*** ~einsum2~
+
+This computes ~einsum~ products that can be expressed
+in terms of ~numpy.matmul~.
+It has the form
+: einsum2.einsum2(a, a_sublist, b, b_sublist, out_sublist, threads=1)
+where ~a~ and ~b~ are tensors, ~a_sublist~ and ~b_sublist~ label the indices
+of ~a~ and ~b~, ~out_sublist~ gives the indices of the output array,
+and ~threads~ is the number of parallel cores to use.
+
+Unlike ~numpy.einsum~, the subscripts in ~einsum2.einsum2~ are allowed to be a list of
+arbitrary hashable keys. However, repeated indices on the same array (i.e. diagonal operations)
+are not supported.
 
 *** ~batched_dot~
 
@@ -37,19 +77,6 @@ More specifically, for 3-tensors ~a~ and ~b~,
 computes ~numpy.matmul(a,b)~ using ~threads~ parallel threads.
 
 ~batched_dot~ is only currently implemented for ~a~ and ~b~ that are 3-tensors.
-
-*** ~einsum2~
-
-This computes ~einsum~ products that can be expressed
-in terms of ~numpy.matmul~.
-It has the form
-: einsum2.einsum2(a, a_sublist, b, b_sublist, out_sublist, threads=1)
-where ~a~ and ~b~ are tensors, ~a_sublist~ and ~b_sublist~ label the indices
-of ~a~ and ~b~, and ~out_sublist~ gives the indices of the output array.
-
-Unlike ~numpy.einsum~, the subscripts in ~einsum2.einsum2~ are allowed to be a list of
-arbitrary hashable keys. However, repeated indices on the same array (i.e. diagonal operations)
-are not supported.
 
 *** ~einsum1~
 
@@ -62,21 +89,3 @@ are summed out, and then the axes of ~in_arr~ are rearranged to match ~out_subli
 
 Like ~einsum2~, arbitrary keys are allowed to label the subscripts in ~einsum1~.
 Also like ~einsum2~, repeated subscripts (i.e. diagonal operations) are not supported.
-
-** Installation
-
-Pre-requisites are ~Cython~, a C compiler, ~numpy~, and ~autograd~.
-Furthermore, your C compiler needs to support OpenMP, and may need to
-be the same as the C compiler that created your Python installation.
-
-So, for example, the default C compiler on OSX will not work, because
-it does not yet support OpenMP.
-Users of Anaconda Python on Linux may also run into issues, because
-Anaconda Python was compiled with the old gcc-4.
-
-If you use Anaconda Python on OSX or Linux, you can do
-: conda install gcc
-to install a compatible C compiler, and then
-install ~einsum2~ with the correct C compiler by typing
-: CC=gcc pip install .
-at the top-level directory of ~einsum2~.
