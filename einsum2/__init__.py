@@ -1,1 +1,1 @@
-from .einsum2 import batched_dot, einsum2
+from .einsum2 import batched_dot, einsum2, einsum1
