@@ -9,8 +9,12 @@ A = np.random.normal(size=(I,J,K))
 B = np.random.normal(size=(I,K,L))
 
 print("Timing np.matmul")
-%timeit A @ B
+%timeit np.matmul(A , B)
 
 for j in (1,2,4):
     print("Timing einsum2.batched_dot with %d threads" % j)
     %timeit einsum2.batched_dot(A,B, threads=j)
+
+for j in (1,2,4):
+    print("Timing einsum2.einsum2 with %d threads" % j)
+    %timeit einsum2.einsum2(A, ("i","j","k"), B, ("i", "k", "l"), ("i", "j", "l"), threads=j)
