@@ -10,7 +10,16 @@ batched_dot.defgrad(lambda ans,a,b,threads=1: lambda g: batched_dot(g, np.transp
 batched_dot.defgrad(lambda ans,a,b,threads=1: lambda g: batched_dot(np.transpose(a, (0,2,1)), g,
                                                                     threads), argnum=1)
 
-def einsum2(a, a_sublist, b, b_sublist, out_sublist, threads=1):
+def einsum2(*args, **kwargs):
+    if isinstance(args[0], str):
+        subscripts, a, b = args[:3]
+        ab_subs, out_subs = subscripts.split("->")
+        a_subs, b_subs = ab_subs.split(",")
+        return _einsum2(a, list(a_subs), b, list(b_subs), list(out_subs), *args[3:], **kwargs)
+    else:
+        return _einsum2(*args, **kwargs)
+
+def _einsum2(a, a_sublist, b, b_sublist, out_sublist, threads=1):
     for subs in a_sublist, b_sublist, out_sublist:
         if len(subs) != len(set(subs)):
             raise NotImplementedError("Repeated subscripts not implemented")

@@ -22,6 +22,20 @@ def test_einsum2():
                                  B, [dim_idxs[s] for s in Bdims],
                                  [dim_idxs[s] for s in Cdims]))
 
+def test_einsum2_str():
+    p = .5
+    A, Adims = random_tensor(p)
+    B, Bdims = random_tensor(p)
+    Cdims = np.random.permutation([k for k in set(Adims + Bdims) if np.random.uniform() <= p])
+
+    dim_idxs = {k:i for i,k in enumerate(set(Adims + Bdims))}
+    Adims, Bdims, Cdims = [''.join(dims)
+                           for dims in (Adims,Bdims,Cdims)]
+    subs = Adims + "," + Bdims + "->" + Cdims
+    assert np.allclose(einsum2.einsum2(subs, A, B),
+                       einsum2.einsum2(A, Adims,
+                                       B, Bdims, Cdims))
+
 def test_grad():
     p = .05
     def fun0(B, Bdims):

@@ -60,17 +60,35 @@ the function calls using multiple threads.
 *** ~einsum2~
 
 This computes ~einsum~ products that can be expressed
-in terms of ~numpy.matmul~.
-It has the form
+in terms of ~numpy.matmul~ and ~numpy.reshape~.
+It can either have the form
 : einsum2.einsum2(a, a_sublist, b, b_sublist, out_sublist, threads=1)
-where ~a~ and ~b~ are tensors, ~a_sublist~ and ~b_sublist~ label the indices
-of ~a~ and ~b~, ~out_sublist~ gives the indices of the output array,
-and ~threads~ is the number of parallel cores to use.
+or
+: einsum2.einsum2(subscripts_str, a, b, threads=1)
+Here ~a~ and ~b~ are tensors, and ~threads~ gives the number of parallel cores
+to use.
+In the first format, ~a_sublist~ and ~b_sublist~ label the indices of ~a~ and ~b~,
+while ~out_sublist~ gives the indices of the output array.
+In the second format, ~subscripts_str~ specifies the subscripts of ~a~, ~b~, and
+the output, and looks like src_python[:exports code]{"a_subs,b_subs->out_subs"}.
 
-Unlike ~numpy.einsum~, the subscripts in ~einsum2.einsum2~ are allowed to be a list of
-arbitrary hashable keys. However, repeated indices on the same array (i.e. diagonal operations)
+The official [[https://docs.scipy.org/doc/numpy/reference/generated/numpy.einsum.html][numpy.einsum documentation]] provides more details about specifying the subscripts;
+here is an example. The following two calls are equivalent:
+: einsum2(A, [0,1,2,3], B, [4,1,0], [0,2,4])
+and
+: einsum2("ijkm,nji->ikn", A, B)
+and returns a tensor C with C_{ikn} = \sum_{j,m} A_{ijkm} B_{nji}.
+
+Unlike ~numpy.einsum~, we allow the subscripts in the first format to be a list of
+arbitrary hashable keys, so
+: einsum2(A, ["zero","one","two","three], B, ["four","one","zero"], ["zero","two","four"])
+would also be allowed.
+
+~einsum2~ only implements a subset of ~einsum~ functionality.
+First, ~einsum2~ only handles two input arrays.
+Secondly, repeated indices on the same array (i.e. diagonal operations)
 are not supported.
-Also, the alternative ~numpy.einsum(subscript_str, arr0, arr1, ...)~ format is not yet supported.
+Finally, we always require the output subscripts to be specified.
 
 *** ~batched_dot~
 
