@@ -11,18 +11,18 @@ CPUs, whereas ~numpy.einsum~ remains single-threaded.
 
 The trouble is, some ~einsum~ products are impossible to express as
 ~dot~ or ~tensordot~. For example,
-: numpy.einsum(A, [0,1,2], B, [0,2,3], [0,1,3])
-returns a tensor C with C_{i,j,k} = \sum_{m} A_{i,j,m} B_{i,m,k}.
+: numpy.einsum("ijm,kmi->ijk", A, B)
+returns a tensor C with C_{i,j,k} = \sum_{m} A_{i,j,m} B_{k,m,i}.
 This cannot be expressed as a ~dot~ or ~tensordot~ because the shared
-axis i (or ~0~) is included in the output C.
+axis i is included in the output C.
 
 This operation /can/ be expressed in terms of ~numpy.matmul~, and in particular
-this example is equivalent to ~numpy.matmul(A,B)~.
+this example is equivalent to ~numpy.matmul(A, np.transpose(B))~.
 However, on my machine, ~numpy.matmul~ does not appear to take advantage
 of parallel BLAS with multiple cores.
 This may eventually change in the future (last year Intel introduced
 [[https://software.intel.com/en-us/articles/introducing-batch-gemm-operations][batched GEMM]] operations), but in the meantime, you can use ~einsum2~
-to parallelize ~numpy.matmul~ and equivalent ~einsum~ operations.
+to parallelize such ~einsum~ calls.
 
 ~einsum2~ is also compatible with the [[https://github.com/HIPS/autograd][autograd]] package for automatic
 differentiation.
@@ -47,12 +47,12 @@ at the top-level directory of ~einsum2~.
 
 (WARNING: depending on the order of your load path, ~conda install gcc~
 may clobber your system ~gcc~. 
-One option is to create a separate with [[http://conda.pydata.org/docs/using/envs.html][environment]] with conda.
+One option is to create a separate [[http://conda.pydata.org/docs/using/envs.html][environment]] with conda.
 I am looking for a better solution to this issue --
 advice appreciated)
 
 To test whether the parallelization is working, try
-~ipython test/profile_einsum2~, you should see a speedup for
+~ipython test/profile_einsum2.ipy~, you should see a speedup for
 the function calls using multiple threads.
 
 ** Usage
@@ -60,7 +60,7 @@ the function calls using multiple threads.
 *** ~einsum2~
 
 This computes ~einsum~ products that can be expressed
-in terms of ~numpy.matmul~ and ~numpy.reshape~.
+in terms of ~matmul~, ~transpose~, and ~reshape~ operations.
 It can either have the form
 : einsum2.einsum2(a, a_sublist, b, b_sublist, out_sublist, threads=1)
 or
@@ -69,8 +69,9 @@ Here ~a~ and ~b~ are tensors, and ~threads~ gives the number of parallel cores
 to use.
 In the first format, ~a_sublist~ and ~b_sublist~ label the indices of ~a~ and ~b~,
 while ~out_sublist~ gives the indices of the output array.
-In the second format, ~subscripts_str~ specifies the subscripts of ~a~, ~b~, and
-the output, and looks like src_python[:exports code]{"a_subs,b_subs->out_subs"}.
+In the second format, ~subscripts_str~ is a string specifying the subscripts of ~a~, ~b~, and
+the output, and looks like ~a_subs,b_subs->out_subs~.
+
 
 The official [[https://docs.scipy.org/doc/numpy/reference/generated/numpy.einsum.html][numpy.einsum documentation]] provides more details about specifying the subscripts;
 here is an example. The following two calls are equivalent:
