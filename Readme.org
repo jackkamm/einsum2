@@ -29,27 +29,28 @@ differentiation.
 
 ** Installation
 
-Pre-requisites are a C compiler, ~Cython~, ~numpy~, and [[https://github.com/HIPS/autograd][autograd]].
-Furthermore, your C compiler needs to support OpenMP, and in some cases may need to
-be the same as the C compiler that created your Python installation.
-
-So, for example, the default C compiler on OSX will not work, because
-it does not yet support OpenMP.
-Some Linux users of Anaconda Python may also run into issues, because
-Anaconda Python was compiled with the old gcc-4.
-
-If you use Anaconda Python, you can do
-: conda install gcc
-to install a compatible C compiler, and then
-install ~einsum2~ with the correct C compiler by typing
-: CC=/path/to/anaconda/gcc pip install .
+Pre-requisites are a C compiler that supports OpenMP, ~Cython~, ~numpy~, and ~pip~.
+Assuming you satisfy these requirements, you can install with
+: pip install .
 at the top-level directory of ~einsum2~.
 
-(WARNING: depending on the order of your load path, ~conda install gcc~
-may clobber your system ~gcc~. 
-One option is to create a separate [[http://conda.pydata.org/docs/using/envs.html][environment]] with conda.
-I am looking for a better solution to this issue --
-advice appreciated)
+If you have problem installing or running, it's probably because
+of your C compiler.
+On OSX in particular, the default compiler ~clang~ does not support OpenMP and thus won't work.
+I've also occasionally run into issues using Anaconda Python on Linux,
+apparently because of the old gcc-4 it was compiled with -- however, I'm currently unable to reproduce this error.
+
+In case you are having issues with the C compiler, it is recommended
+to install and run ~einsum2~ in a virtual environment with a compatible C compiler.
+For example, if you use Anaconda Python, you can do the following:
+1. Create a new virtual environment named ~env_name~ with ~conda create -n env_name python=3.5 anaconda~
+   (alternatively, you can use ~python=2.7 anaconda~).
+2. Switch to the new environment with ~source activate env_name~.
+3. Do ~conda install gcc~ to install the Anaconda distribution of ~gcc~,
+   which both supports OpenMP and is fully compatible with the Anaconda Python.
+   Note this clobbers your system ~gcc~, which is why we are using a virtual environment here.
+4. Finally, install ~einsum2~ with ~CC=gcc pip install .~ (the ~CC=gcc~ is required on OSX, otherwise
+   the installation will try to use the default ~clang~ compiler that does not support OpenMP).
 
 To test whether the parallelization is working, try
 ~ipython test/profile_einsum2.ipy~, you should see a speedup for
