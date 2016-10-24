@@ -17,6 +17,8 @@ for j in (1,2,4):
 
 A = np.random.normal(size=(I,J,K))
 B = np.random.normal(size=(L,I,K))
+print("Timing np.einsum")
+%timeit np.einsum("ijk,lik->ijl", A, B)
 for j in (1,2,4):
     print("Timing einsum2.einsum2 with %d threads" % j)
     %timeit einsum2.einsum2("ijk,lik->ijl", A, B, threads=j)
