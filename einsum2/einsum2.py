@@ -11,6 +11,36 @@ batched_dot.defgrad(lambda ans,a,b,threads=1: lambda g: batched_dot(np.transpose
                                                                     threads), argnum=1)
 
 def einsum2(*args, **kwargs):
+    """
+    einsum2(subscripts_str, arr0, arr1, threads=1, use_dot=True)
+    or,
+    einsum2(op0, subscript_list0, arr1, subscript_list1,
+            output_subscript_list, threads=1, use_dot=True)
+
+    This function is similar to einsum, except it only operates
+    on two input arrays, does not allow diagonal operations
+    (repeated subscripts on the same array), and requires the output
+    subscripts to always be specified.
+
+    Unlike the standard einsum, einsum2 uses a parallel for loop to
+    perform computations in parallel. The parameter "threads" controls
+    the number of parallel threads to use.
+
+    If use_dot=True, einsum2 will use numpy.dot when possible.
+    The "threads" parameter is ignored whenever numpy.dot is used.
+    numpy.dot will use BLAS to perform matrix multiplication, which
+    can be faster than using the parallel for loop, especially if
+    numpy is compiled against a parallel BLAS library such as Intel MKL.
+    However, not all operations can be recast into numpy.dot (most notably,
+    batched matrix multiplication), and whenever it is not possible
+    to use numpy.dot, the parallel for loop will be used.
+
+    The input of einsum2 can be specified in two alternative ways.
+    Either the subscripts can be given by a single string, or
+    the subscripts of each input array and the output array can each
+    be specified in a separate list. See the documentation of numpy.einsum
+    for more details.
+    """
     if isinstance(args[0], str):
         subscripts, a, b = args[:3]
         ab_subs, out_subs = subscripts.split("->")
@@ -19,7 +49,7 @@ def einsum2(*args, **kwargs):
     else:
         return _einsum2(*args, **kwargs)
 
-def _einsum2(a, a_sublist, b, b_sublist, out_sublist, threads=1):
+def _einsum2(a, a_sublist, b, b_sublist, out_sublist, threads=1, use_dot=True):
     for subs in a_sublist, b_sublist, out_sublist:
         if len(subs) != len(set(subs)):
             raise NotImplementedError("Repeated subscripts not implemented")
@@ -50,8 +80,15 @@ def _einsum2(a, a_sublist, b, b_sublist, out_sublist, threads=1):
                 elif shapes[s] != i:
                     raise ValueError("a,b shapes don't match")
 
-    c = batched_dot(_reshape(a, a_sublist, abc, a_minus_b, ab_minus_c),
-                    _reshape(b, b_sublist, abc, ab_minus_c, b_minus_a), threads=threads)
+    a = _reshape(a, a_sublist, abc, a_minus_b, ab_minus_c)
+    b = _reshape(b, b_sublist, abc, ab_minus_c, b_minus_a)
+    if use_dot and not abc:
+        # make sure a,b are aligned in memory to take advantage of BLAS
+        a = np.array(np.reshape(a, a.shape[1:]))
+        b = np.array(np.reshape(b, b.shape[1:]))
+        c = np.dot(a, b)
+    else:
+        c = batched_dot(a, b, threads=threads)
 
     c_sublist = abc + a_minus_b + b_minus_a
     c = np.reshape(c, [shapes[s] for s in c_sublist])

@@ -63,9 +63,9 @@ the function calls using multiple threads.
 This computes ~einsum~ products that can be expressed
 in terms of ~matmul~, ~transpose~, and ~reshape~ operations.
 It can either have the form
-: einsum2.einsum2(a, a_sublist, b, b_sublist, out_sublist, threads=1)
+: einsum2.einsum2(a, a_sublist, b, b_sublist, out_sublist, threads=1, use_dot=True)
 or
-: einsum2.einsum2(subscripts_str, a, b, threads=1)
+: einsum2.einsum2(subscripts_str, a, b, threads=1, use_dot=True)
 Here ~a~ and ~b~ are tensors, and ~threads~ gives the number of parallel cores
 to use.
 In the first format, ~a_sublist~ and ~b_sublist~ label the indices of ~a~ and ~b~,
@@ -91,6 +91,13 @@ First, ~einsum2~ only handles two input arrays.
 Secondly, repeated indices on the same array (i.e. diagonal operations)
 are not supported.
 Finally, we always require the output subscripts to be specified.
+
+If ~use_dot=True~, then ~numpy.dot~ will be used in lieue of a parallel
+for loop when possible, in which case the ~threads~ parameter is ignored.
+The advantage of ~numpy.dot~ is that it uses BLAS, which can be faster than
+the naive parallel for loop, especially if numpy is compiled with a parallel
+BLAS implementation such as Intel MKL. If it is not possible to use ~numpy.dot~,
+such as in batched matrix multiply, then the ~use_dot~ parameter is ignored.
 
 *** ~batched_dot~
 
