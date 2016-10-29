@@ -83,9 +83,6 @@ def _einsum2(a, a_sublist, b, b_sublist, out_sublist, threads=1, use_dot=True):
     a = _reshape(a, a_sublist, abc, a_minus_b, ab_minus_c)
     b = _reshape(b, b_sublist, abc, ab_minus_c, b_minus_a)
     if use_dot and not abc:
-        # make sure a,b are aligned in memory to take advantage of BLAS
-        a = np.array(np.reshape(a, a.shape[1:]))
-        b = np.array(np.reshape(b, b.shape[1:]))
         c = np.dot(a, b)
     else:
         c = batched_dot(a, b, threads=threads)
