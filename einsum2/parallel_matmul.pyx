@@ -7,8 +7,7 @@ from cython.parallel import prange, parallel
 @cython.wraparound(False)
 @cython.cdivision(True)
 def _par_matmul(np.ndarray[np.double_t, ndim=3] A,
-                np.ndarray[np.double_t, ndim=3] B,
-                int threads):
+                np.ndarray[np.double_t, ndim=3] B):
     if A.shape[0] != B.shape[0] or A.shape[2] != B.shape[1]:
         raise ValueError("Invalid dimensions for matmul")
 
@@ -22,7 +21,7 @@ def _par_matmul(np.ndarray[np.double_t, ndim=3] A,
     IJL = I*JL
 
     cdef int i,j,k,l,jl,ijl
-    for ijl in prange(IJL, schedule='guided', nogil=True, num_threads=threads):
+    for ijl in prange(IJL, schedule='guided', nogil=True):
         i = ijl // JL
         jl = ijl % JL
         j = jl // L

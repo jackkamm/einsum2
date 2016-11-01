@@ -1,5 +1,6 @@
 # emacs temporary savefiles
 *~
+*.tramp_history
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

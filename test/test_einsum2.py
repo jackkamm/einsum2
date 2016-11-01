@@ -10,14 +10,6 @@ def test_batched_dot():
 
     assert np.allclose(einsum2.batched_dot(A,B), A @ B)
 
-def test_use_dot():
-    J,K,L = 10,11,12
-    A = np.random.normal(size=(J,K))
-    B = np.random.normal(size=(J,L))
-
-    assert np.allclose(*(einsum2.einsum2("jk,jl->lk", A, B, use_dot=use_dot)
-                         for use_dot in (True,False)))
-
 def test_einsum2():
     p = .5
     A, Adims = random_tensor(p)

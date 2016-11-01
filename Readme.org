@@ -53,8 +53,8 @@ For example, if you use Anaconda Python, you can do the following:
    the installation will try to use the default ~clang~ compiler that does not support OpenMP).
 
 To test whether the parallelization is working, try
-~ipython test/profile_einsum2.ipy~, you should see a speedup for
-the function calls using multiple threads.
+~sh test/profile_einsum2.sh~, you should see a speedup for
+the function calls using multiple threads (~OMP_NUM_THREADS > 1~).
 
 ** Usage
 
@@ -63,11 +63,10 @@ the function calls using multiple threads.
 This computes ~einsum~ products that can be expressed
 in terms of ~matmul~, ~transpose~, and ~reshape~ operations.
 It can either have the form
-: einsum2.einsum2(a, a_sublist, b, b_sublist, out_sublist, threads=1, use_dot=True)
+: einsum2.einsum2(a, a_sublist, b, b_sublist, out_sublist)
 or
-: einsum2.einsum2(subscripts_str, a, b, threads=1, use_dot=True)
-Here ~a~ and ~b~ are tensors, and ~threads~ gives the number of parallel cores
-to use.
+: einsum2.einsum2(subscripts_str, a, b)
+Here ~a~ and ~b~ are tensors.
 In the first format, ~a_sublist~ and ~b_sublist~ label the indices of ~a~ and ~b~,
 while ~out_sublist~ gives the indices of the output array.
 In the second format, ~subscripts_str~ is a string specifying the subscripts of ~a~, ~b~, and
@@ -86,27 +85,35 @@ arbitrary hashable keys, so
 : einsum2(A, ["zero","one","two","three], B, ["four","one","zero"], ["zero","two","four"])
 would also be allowed.
 
-~einsum2~ only implements a subset of ~einsum~ functionality.
-First, ~einsum2~ only handles two input arrays.
-Secondly, repeated indices on the same array (i.e. diagonal operations)
-are not supported.
-Finally, we always require the output subscripts to be specified.
+~einsum2~ has several limitations compared to ~numpy.einsum~: it only operates
+on two input arrays, does not allow diagonal operations
+(repeated subscripts on the same array), and requires the output
+subscripts to always be specified.
 
-If ~use_dot=True~, then ~numpy.dot~ will be used in lieue of a parallel
-for loop when possible, in which case the ~threads~ parameter is ignored.
-The advantage of ~numpy.dot~ is that it uses BLAS, which can be faster than
-the naive parallel for loop, especially if numpy is compiled with a parallel
-BLAS implementation such as Intel MKL. If it is not possible to use ~numpy.dot~,
-such as in batched matrix multiply, then the ~use_dot~ parameter is ignored.
+Unlike the standard einsum, einsum2 will perform computations
+in parallel. The number of parallel threads is selected automatically,
+but you can also control this with the environment variable
+~OMP_NUM_THREADS~.
+
+To perform the parallel computation, einsum2 will either use
+numpy.dot (if possible), otherwise it will use a parallel
+for loop. The advantage of using numpy.dot is that it
+uses BLAS which is much faster than a for loop. However,
+you need to make sure numpy is compiled against a parallel BLAS
+implementation such as MKL or OpenBlas. You won't need to worry
+about this for most packaged, precompiled versions of numpy
+(e.g. Anaconda Python).
 
 *** ~batched_dot~
 
 This is a parallel implementation of ~numpy.matmul~.
 More specifically, for 3-tensors ~a~ and ~b~,
-: einsum2.batched_dot(a, b, threads=1)
-computes ~numpy.matmul(a,b)~ using ~threads~ parallel threads.
+: einsum2.batched_dot(a, b)
+computes ~numpy.matmul(a,b)~ in parallel.
 
 ~batched_dot~ is only currently implemented for ~a~ and ~b~ that are 3-tensors.
+If the leading dimension has length 1, then ~batched_dot~ will use ~numpy.dot~
+to take advantage of BLAS.
 
 *** ~einsum1~
 
