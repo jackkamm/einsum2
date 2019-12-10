@@ -34,11 +34,10 @@ def batched_dot(a, b):
         ## parallel batched matrix multiply
         return _par_matmul(a, b)
 
-batched_dot.defgrad(lambda ans, a, b:
-                    lambda g: batched_dot(g, np.transpose(b, (0,2,1))))
-batched_dot.defgrad(lambda ans, a, b:
-                    lambda g: batched_dot(np.transpose(a, (0,2,1)), g),
-                    argnum=1)
+autograd.defvjp(
+    batched_dot,
+    lambda ans, a, b: lambda g: batched_dot(g, np.transpose(b, (0,2,1))),
+    lambda ans, a, b: lambda g: batched_dot(np.transpose(a, (0,2,1)), g))
 
 def einsum2(*args, **kwargs):
     """
